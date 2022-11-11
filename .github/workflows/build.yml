@@ -1,0 +1,72 @@
+name: schedule
+
+on: 
+  push:
+    branches: [main]
+    
+env:
+  DOTNET_CLI_HOME: /tmp
+  REPOSITORY: Schedule
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    
+    strategy:
+      matrix:
+        dotnet: ["6.0.X"]
+    
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        id: setup-dotnet
+        uses: actions/setup-dotnet@v1.7.2
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Clone repo
+        id: clone
+        run: cd /tmp && git clone git@github.com:ibragimovs16/Schedule.git
+
+      - name: Install dependencies
+        id: dependencies
+        run: cd /tmp/Schedule/Schedule.Backend && dotnet restore
+
+      - name: Build
+        id: build
+        run: cd /tmp/Schedule/Schedule.Backend && dotnet build --configuration Release --no-restore
+        
+      - name: Publish
+        id: publish
+        run: cd /tmp/Schedule/Schedule.Backend && dotnet publish -c Release -o /var/www/schedule-backend/release
+
+      - name: Remove app src
+        if: always()
+        id: remove-src
+        run: rm -rf /tmp/Schedule
+        
+      - name: Restart the service
+        id: restart-service
+        run: systemctl restart schedule-backend.service
+          
+      - name: Send a notification to telegram
+        if: always()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ${{ github.actor }} created commit:
+            Commit message: ${{ github.event.commits[0].message }}
+            Repository: ${{ github.repository }}
+            
+            Results:
+            Setup .NET Core SDK result: ${{ steps.setup-dotnet.outcome != 'success' && '❌' || '✅' }} ${{ steps.setup-dotnet.outcome }}
+            Clone reuslt: ${{ steps.clone.outcome != 'success' && '❌' || '✅' }} ${{ steps.clone.outcome }}
+            Install dependencies result: ${{ steps.dependencies.outcome != 'success' && '❌' || '✅' }} ${{ steps.dependencies.outcome }}
+            Build result: ${{ steps.build.outcome != 'success' && '❌' || '✅' }} ${{ steps.build.outcome }}
+            Publish result: ${{ steps.publish.outcome != 'success' && '❌' || '✅' }} ${{ steps.publish.outcome }}
+            Cleaunp result: ${{ steps.remove-src.outcome != 'success' && '❌' || '✅' }} ${{ steps.remove-src.outcome }}
+            Restart the service result: ${{ steps.restart-service.outcome != 'success' && '❌' || '✅' }} ${{ steps.restart-service.outcome }}
+            
+    

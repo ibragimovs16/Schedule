@@ -62,8 +62,8 @@ public class ParsingQueueService : IParsingQueueService
             });
             return new BaseResponse<string>
             {
-                StatusCode = HttpStatusCode.OK,
-                Data = response
+                StatusCode = response.IsAdded ? HttpStatusCode.OK : HttpStatusCode.Conflict,
+                Data = response.Message
             };
         }
         catch (Exception e)

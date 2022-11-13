@@ -16,22 +16,22 @@ public class ParsingQueueRepository : IParsingQueueRepository
     public async Task<List<DbParsingQueue>> GetAllAsync() =>
         await _db.ParsingQueue.ToListAsync();
 
-    public async Task<string> AddAsync(DbParsingQueue entity)
+    public async Task<(string Message, bool IsAdded)> AddAsync(DbParsingQueue entity)
     {
         if (!entity.IsUpdating)
         {
             var group = await _db.Groups.FirstOrDefaultAsync(item => item.Name == entity.GroupName);
             if (group is not null)
-                return "Расписание для этой группы уже существует, обновление расписания происходит каждый день в 00:00 (по МСК)";
+                return ("Расписание для этой группы уже существует, обновление расписания происходит каждый день в 00:00 (по МСК)", false);
             
             await _db.ParsingQueue.AddAsync(entity);
             await _db.SaveChangesAsync();
-            return "Группа добавлена в очередь";
+            return ("Группа добавлена в очередь", true);
         }
         
         await _db.ParsingQueue.AddAsync(entity);
         await _db.SaveChangesAsync();
-        return string.Empty;
+        return (string.Empty, false);
     }
 
     public async Task<bool> RemoveAsync(DbParsingQueue entity)

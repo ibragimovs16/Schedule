@@ -5,6 +5,6 @@ namespace Schedule.DAL.Abstractions;
 public interface IParsingQueueRepository : IDisposable
 {
     Task<List<DbParsingQueue>> GetAllAsync();
-    Task<string> AddAsync(DbParsingQueue entity);
+    Task<(string Message, bool IsAdded)> AddAsync(DbParsingQueue entity);
     Task<bool> RemoveAsync(DbParsingQueue entity);
 }

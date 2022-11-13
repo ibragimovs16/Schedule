@@ -63,6 +63,9 @@ public class ScheduleController : BaseApiController<DbSchedule, ScheduleModel, S
             });
         
         var result = await _parsingQueueService.AddAsync(groupName, isNotificationNeeded, subscriberId, false);
+        if (result.StatusCode != HttpStatusCode.OK)
+            return Conflict(result);
+        
         return Ok(result);
     }
 }

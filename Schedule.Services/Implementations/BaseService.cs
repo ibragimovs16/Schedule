@@ -11,18 +11,18 @@ namespace Schedule.Services.Implementations;
 public class BaseService<T> : IBaseService<T>
     where T : DbEntity, new()
 {
-    private readonly IBaseRepository<T> _repository;
+    protected readonly IBaseRepository<T> Repository;
 
     public BaseService(IBaseRepository<T> repository)
     {
-        _repository = repository;
+        Repository = repository;
     }
     
     public virtual async Task<BaseResponse<IEnumerable<T>>> GetAllAsync()
     {
         try
         {
-            var result = await _repository.GetAllAsync();
+            var result = await Repository.GetAllAsync();
             if (result.Count == 0)
                 return new BaseResponse<IEnumerable<T>>
                 {
@@ -50,7 +50,7 @@ public class BaseService<T> : IBaseService<T>
     {
         try
         {
-            var result = await _repository.FindByAsync(predicate);
+            var result = await Repository.FindByAsync(predicate);
             if (result.Count == 0)
                 return new BaseResponse<T?>
                 {
@@ -79,7 +79,7 @@ public class BaseService<T> : IBaseService<T>
         try
         {
             var dbModel = ModelToDbModel(model);
-            var result = await _repository.AddAsync(dbModel);
+            var result = await Repository.AddAsync(dbModel);
             return new BaseResponse<T?>
             {
                 StatusCode = HttpStatusCode.OK,
@@ -100,7 +100,7 @@ public class BaseService<T> : IBaseService<T>
     {
         try
         {
-            var result = await _repository.FindByAsync(item => item.Id == id);
+            var result = await Repository.FindByAsync(item => item.Id == id);
         
             if (result.Count == 0)
                 return new BaseResponse<bool>
@@ -112,7 +112,7 @@ public class BaseService<T> : IBaseService<T>
             var dbModel = ModelToDbModel(model);
             dbModel.Id = id;
 
-            var updatedModel = await _repository.UpdateAsync(dbModel);
+            var updatedModel = await Repository.UpdateAsync(dbModel);
             if (!updatedModel.Equals(dbModel))
                 return new BaseResponse<bool>
                 {
@@ -140,7 +140,7 @@ public class BaseService<T> : IBaseService<T>
     {
         try
         {
-            var result = await _repository.FindByAsync(bs => bs.Id == id);
+            var result = await Repository.FindByAsync(bs => bs.Id == id);
             if (result.Count == 0)
                 return new BaseResponse<bool>
                 {
@@ -149,7 +149,7 @@ public class BaseService<T> : IBaseService<T>
                 };
         
             var dbModel = result.First();
-            var removed = await _repository.RemoveAsync(dbModel);
+            var removed = await Repository.RemoveAsync(dbModel);
             if (!removed)
                 return new BaseResponse<bool>
                 {
@@ -206,7 +206,7 @@ public class BaseService<T> : IBaseService<T>
         {
             if (disposing)
             {
-                _repository.Dispose();
+                Repository.Dispose();
             }
         }
 

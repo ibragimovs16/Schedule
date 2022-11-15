@@ -1,6 +1,6 @@
 ﻿namespace Schedule.Domain.DbModels;
 
-public class DbNotificationsSettings : DbEntity
+public class DbNotificationsSetting : DbEntity
 {
     public string GroupId { get; set; } = string.Empty;
     public byte? DayOfWeek { get; set; }

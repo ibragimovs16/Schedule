@@ -2,5 +2,6 @@
 
 public class SubscribersCreateModel
 {
-    public string? Email { get; set; }
+    public long TgChatId { get; set; }
+    public long TgUserId { get; set; }
 }

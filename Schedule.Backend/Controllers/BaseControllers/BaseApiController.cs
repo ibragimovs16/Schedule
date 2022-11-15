@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Schedule.Domain.DbModels;
-using Schedule.Domain.Models.Params;
+using Schedule.Domain.Responses;
 using Schedule.Services.Abstractions;
 
 namespace Schedule.Backend.Controllers.BaseControllers;
@@ -30,7 +31,7 @@ public abstract class BaseApiController<T, TC, TU> : ControllerBase, IDisposable
     public virtual async Task<IActionResult> GetAll()
     {
         var result = await Service.GetAllAsync();
-        return Ok(result);
+        return ActionResponse(result);
     }
     
     /// <summary>
@@ -42,7 +43,7 @@ public abstract class BaseApiController<T, TC, TU> : ControllerBase, IDisposable
     {
         var result = await Service
             .FindByAsync(item => item.Id == id);
-        return Ok(result);
+        return ActionResponse(result);
     }
     
     /// <summary>
@@ -52,7 +53,7 @@ public abstract class BaseApiController<T, TC, TU> : ControllerBase, IDisposable
     public virtual async Task<IActionResult> Add([FromBody] TC model)
     {
         var result = await Service.AddAsync(model);
-        return Ok(result);
+        return ActionResponse(result);
     }
     
     /// <summary>
@@ -62,7 +63,7 @@ public abstract class BaseApiController<T, TC, TU> : ControllerBase, IDisposable
     public virtual async Task<IActionResult> Update([FromBody] TU model, string id)
     {
         var result = await Service.UpdateAsync(model, id);
-        return Ok(result);
+        return ActionResponse(result);
     }
     
     /// <summary>
@@ -72,9 +73,21 @@ public abstract class BaseApiController<T, TC, TU> : ControllerBase, IDisposable
     public virtual async Task<IActionResult> Remove(string id)
     {
         var result = await Service.RemoveAsync(id);
-        return Ok(result);
+        return ActionResponse(result);
     }
     
+    [NonAction]
+    public IActionResult ActionResponse<TR>(BaseResponse<TR> result) =>
+        result.StatusCode switch
+        {
+            HttpStatusCode.OK => Ok(result),
+            HttpStatusCode.BadRequest => BadRequest(result),
+            HttpStatusCode.NotFound => NotFound(result),
+            HttpStatusCode.Unauthorized => Unauthorized(result),
+            HttpStatusCode.Forbidden => Forbid(),
+            _ => StatusCode((int) result.StatusCode, result)
+        };
+
     #region Dispose
 
     public void Dispose()

@@ -3,6 +3,7 @@ using Schedule.DAL.Abstractions;
 using Schedule.DAL.Implementations;
 using Schedule.Domain.DbModels;
 using Schedule.Services.Abstractions;
+using Schedule.Services.HostedServices.NotificationsHostedServices;
 using Schedule.Services.HostedServices.ScheduleHostedServices;
 using Schedule.Services.Implementations;
 
@@ -18,7 +19,8 @@ public static class Initializer
     
     public static void InitializeServices(this IServiceCollection services)
     {
-        services.AddScoped(typeof(IBaseService<DbNotificationsSettings>), typeof(NotificationsSettingsService));
+        services.AddScoped(typeof(IBaseService<DbNotificationsSetting>), typeof(NotificationsSettingsService));
+        services.AddScoped(typeof(IBaseService<DbSubscriber>), typeof(SubscribersService));
         services.AddScoped(typeof(IBaseService<>), typeof(BaseService<>));
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IScheduleService, ScheduleService>();
@@ -29,5 +31,6 @@ public static class Initializer
     {
         services.AddHostedService<ScheduleParserHostedService>();
         services.AddHostedService<ScheduleUpdaterHostedService>();
+        services.AddHostedService<NotificationsSenderHostedService>();
     }
 }

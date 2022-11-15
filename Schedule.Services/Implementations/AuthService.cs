@@ -5,6 +5,7 @@ using Schedule.DAL.Abstractions;
 using Schedule.Domain.DbModels;
 using Schedule.Domain.Enums;
 using Schedule.Domain.Models;
+using Schedule.Domain.Models.UpdateModels;
 using Schedule.Domain.Responses;
 using Schedule.Services.Abstractions;
 using Schedule.Services.Utils;
@@ -54,11 +55,11 @@ public class AuthService : IAuthService
         return new BaseResponse<string>
         {
             StatusCode = HttpStatusCode.OK,
-            Data = "You have successfully registered."
+            Data = "Вы успешно зарегистрировались."
         };
     }
 
-    public async Task<BaseResponse<string>> Login(User user, IConfiguration configuration, 
+    public async Task<BaseResponse<TokenModel>> Login(User user, IConfiguration configuration, 
         IResponseCookies responseCookies)
     {
         var currentUser = await _repository.FindByAsync(u => u.Username == user.Username);
@@ -70,19 +71,23 @@ public class AuthService : IAuthService
                     currentUser.First().PasswordSalt,
                     currentUser.First().PasswordHash
                 )))
-            return new BaseResponse<string>
+            return new BaseResponse<TokenModel>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                Data = "Incorrect username or password."
+                Message = "Неверный логин или пароль."
             };
         
         var newRefreshToken = TokenService.GenerateRefreshToken(_configuration);
         await SetRefreshToken(currentUser.First(), newRefreshToken, responseCookies);
         
-        return new BaseResponse<string>
+        return new BaseResponse<TokenModel>
         {
             StatusCode = HttpStatusCode.OK,
-            Data = TokenService.CreateToken(currentUser.First(), configuration)
+            Data = new TokenModel
+            {
+                AccessToken = TokenService.CreateToken(currentUser.First(), configuration),
+                RefreshToken = newRefreshToken.Token
+            }
         };
     }
 
@@ -97,7 +102,7 @@ public class AuthService : IAuthService
             return new BaseResponse<string>
             {
                 StatusCode = HttpStatusCode.Unauthorized,
-                Data = "Invalid refresh token."
+                Data = "Неверный токен."
             };
 
         var currentUser = result.First();
@@ -106,7 +111,7 @@ public class AuthService : IAuthService
             return new BaseResponse<string>
             {
                 StatusCode = HttpStatusCode.Unauthorized,
-                Data = "Refresh token expired."
+                Data = "Токен устарел."
             };
 
         var token = TokenService.CreateToken(currentUser, _configuration);

@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System.Globalization;
+using System.Linq.Expressions;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Schedule.DAL.Abstractions;
 using Schedule.Domain.DbModels;
@@ -38,13 +40,18 @@ public class BaseRepository<T> : IBaseRepository<T> where T : DbEntity
         await _db.SaveChangesAsync();
         return createdEntity.Entity;
     }
-
+    
     public virtual async Task<T> UpdateAsync(T entity)
     {
-        var updatedEntity = _db.Set<T>().Update(entity);
+        var entityToUpdate = await _db.Set<T>().FirstOrDefaultAsync(x => x.Id == entity.Id);
+        if (entityToUpdate is null)
+            throw new Exception("Entity not found");
+        
+        _db.Entry(entityToUpdate).CurrentValues.SetValues(entity);
         await _db.SaveChangesAsync();
-        return updatedEntity.Entity;
+        return entity;
     }
+
     public virtual async Task<bool> RemoveAsync(T entity)
     {
         try

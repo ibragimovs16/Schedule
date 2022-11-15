@@ -1,7 +1,9 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Schedule.Domain.DbModels;
 using Schedule.Domain.Exceptions;
+using Schedule.Domain.Models.CreateModels;
 using Schedule.Services.Abstractions;
 using Schedule.Services.HostedServices.BaseHostedServices;
 using Schedule.Services.Utils;
@@ -11,15 +13,19 @@ namespace Schedule.Services.HostedServices.ScheduleHostedServices;
 public class ScheduleParserHostedService : ScopedProcessor
 {
     private readonly string _scheduleUrl;
+    private readonly string _adminId;
 
     public ScheduleParserHostedService(IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
         : base(serviceScopeFactory, TimeSpan.FromSeconds(20))
     {
         _scheduleUrl = configuration["ScheduleUrl"];
+        _adminId = configuration["AdminId"];
     }
 
     protected override async Task ProcessInScope(IServiceProvider scope)
     {
+        var notificationService = scope.GetRequiredService<IBaseService<DbNotification>>();
+
         try
         {
             var parsingQueueService = scope.GetRequiredService<IParsingQueueService>();
@@ -34,50 +40,60 @@ public class ScheduleParserHostedService : ScopedProcessor
                 var parsedSchedule = await ScheduleParser.ParseAsync(group.GroupName, _scheduleUrl);
                 var removeFromQueueResult = await parsingQueueService.RemoveAsync(group);
                 if (removeFromQueueResult.StatusCode != HttpStatusCode.OK || !removeFromQueueResult.Data)
-                    throw new Exception("Не удалось удалить группу из очереди парсинга");
+                    throw new Exception($"Не удалось удалить группу {group.GroupName} из очереди парсинга");
 
                 if (!parsedSchedule.IsSuccess)
                 {
                     if (parsedSchedule.Exception is not ParserExceptions)
                         throw new Exception("Parser error", parsedSchedule.Exception);
 
-                    await HandleParserExceptionAsync(parsedSchedule.Exception);
+                    var message = HandleParserExceptionAsync(parsedSchedule.Exception, group.GroupName);
+                    await notificationService.AddAsync(
+                        new NotificationCreateModel
+                        {
+                            Message = message,
+                            SubscriberId = _adminId
+                        });
                 }
                 else
                 {
                     var addScheduleResult = await scheduleService.ParsedToDbAsync(parsedSchedule.Schedule);
                     if (addScheduleResult.StatusCode != HttpStatusCode.OK || !addScheduleResult.Data)
-                        throw new Exception("Не удалось добавить расписание в базу данных");
+                        throw new Exception($"Не удалось добавить расписание в базу данных для группы {group.GroupName}");
 
-                    // ToDo: Add notification when success
-                    Console.WriteLine(group.IsNotificationNeeded);
+                    if (!group.IsNotificationNeeded) continue;
 
-                    Console.WriteLine(group.IsUpdating
-                        ? $"Данные длы группы {group.GroupName} обновлены"
-                        : $"Группа {group.GroupName} успешно добавлена в базу данных");
+                    if (group.SubscriberId is null)
+                        throw new Exception("Не удалось отправить уведомление (не указан id подписчика)");
+
+                    var result = await notificationService.AddAsync(
+                        new NotificationCreateModel
+                        {
+                            Message = $"Группа {group.GroupName} успешно добавлена в базу данных",
+                            SubscriberId = group.SubscriberId
+                        });
+
+                    if (result.StatusCode != HttpStatusCode.OK)
+                        throw new Exception("Не удалось отправить уведомление");
                 }
             }
         }
         catch (Exception ex)
         {
-            // ToDo: Add notification when error
-
-            Console.WriteLine("Произошла внутренняя ошибка: " + ex.Message + "\n" + ex.InnerException?.Message);
+            await notificationService.AddAsync(
+                new NotificationCreateModel
+                {
+                    Message = "Произошла внутренняя ошибка: " + ex.Message + "\n" + ex.InnerException?.Message,
+                    SubscriberId = _adminId
+                });
         }
     }
-    
-    private Task HandleParserExceptionAsync(Exception exception)
-    {
-        switch (exception)
+
+    private string HandleParserExceptionAsync(Exception exception, string groupName) =>
+        exception switch
         {
-            case ParserExceptions.IncorrectGroupExceptions:
-                Console.WriteLine("Группа не найдена");
-                break;
-            case ParserExceptions.CellNotFoundExceptions:
-                Console.WriteLine("Не удалось найти группу в Excel таблице");
-                break;
-        }
-
-        return Task.CompletedTask;
-    }
+            ParserExceptions.IncorrectGroupExceptions => $"Группа {groupName} не найдена",
+            ParserExceptions.CellNotFoundExceptions => $"Не удалось найти группу {groupName} в Excel таблице",
+            _ => $"Неизвестная ошибка, группа {groupName}"
+        };
 }

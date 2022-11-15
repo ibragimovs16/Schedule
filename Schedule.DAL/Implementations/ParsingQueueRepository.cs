@@ -31,7 +31,7 @@ public class ParsingQueueRepository : IParsingQueueRepository
         
         await _db.ParsingQueue.AddAsync(entity);
         await _db.SaveChangesAsync();
-        return (string.Empty, false);
+        return (string.Empty, true);
     }
 
     public async Task<bool> RemoveAsync(DbParsingQueue entity)

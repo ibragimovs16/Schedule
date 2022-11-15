@@ -9,9 +9,9 @@ namespace Schedule.Services.Implementations;
 public class ParsingQueueService : IParsingQueueService
 {
     private readonly IParsingQueueRepository _repository;
-    private readonly IBaseRepository<DbSubscribers> _subscribersRepository;
+    private readonly IBaseRepository<DbSubscriber> _subscribersRepository;
 
-    public ParsingQueueService(IParsingQueueRepository repository, IBaseRepository<DbSubscribers> subscribersRepository)
+    public ParsingQueueService(IParsingQueueRepository repository, IBaseRepository<DbSubscriber> subscribersRepository)
     {
         _repository = repository;
         _subscribersRepository = subscribersRepository;

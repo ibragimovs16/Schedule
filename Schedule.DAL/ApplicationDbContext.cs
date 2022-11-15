@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DbDate> Dates { get; set; }
     public DbSet<DbSchedule> Schedule { get; set; }
     public DbSet<DbParsingQueue> ParsingQueue { get; set; }
-    public DbSet<DbNotificationsSettings> NotificationsSettings { get; set; }
-    public DbSet<DbSubscribers> Subscribers { get; set; }
+    public DbSet<DbNotificationsSetting> NotificationsSettings { get; set; }
+    public DbSet<DbSubscriber> Subscribers { get; set; }
+    public DbSet<DbNotification> Notifications { get; set; }
 }

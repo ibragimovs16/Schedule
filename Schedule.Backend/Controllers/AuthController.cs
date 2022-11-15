@@ -1,9 +1,8 @@
 ﻿using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Newtonsoft.Json;
 using Schedule.Domain.Models;
+using Schedule.Domain.Models.UpdateModels;
 using Schedule.Domain.Responses;
 using Schedule.Services.Abstractions;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -31,7 +30,7 @@ public class AuthController : Controller
     public async Task<ActionResult> Register([FromBody] User request)
     {
         if (!ModelState.IsValid)
-            return Ok(new BaseResponse<string>
+            return BadRequest(new BaseResponse<string>
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 Message = JsonSerializer.Serialize(ModelState)
@@ -49,7 +48,7 @@ public class AuthController : Controller
     public async Task<ActionResult> Login([FromBody] User request)
     {
         if (!ModelState.IsValid)
-            return Ok(new BaseResponse<string>
+            return BadRequest(new BaseResponse<string>
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 Message = JsonSerializer.Serialize(ModelState)
@@ -58,15 +57,19 @@ public class AuthController : Controller
         var result = await _authService.Login(request, _configuration, Response.Cookies);
 
         if (result.StatusCode != HttpStatusCode.OK)
-            return Ok(result);
+            return BadRequest(result);
+
+        var data = new TokenModel { AccessToken = result.Data!.AccessToken };
+        if (Request.Headers["User-Agent"].ToString().Contains("ScheduleBots"))
+            data.RefreshToken = result.Data.RefreshToken;
         
-        return Ok(new BaseResponse<Dictionary<string, string>>
+        return Ok(new BaseResponse<TokenModel>
         {
             StatusCode = HttpStatusCode.OK,
-            Data = new Dictionary<string, string>{{"AccessToken", result.Data!}}
+            Data = data
         });
     }
-    
+
     /// <summary>
     /// Обновить токен
     /// </summary>
@@ -76,7 +79,7 @@ public class AuthController : Controller
         var result = await _authService.RefreshToken(Request.Cookies, Response.Cookies);
         
         if (result.StatusCode != HttpStatusCode.OK)
-            return Ok(result);
+            return BadRequest(result);
         
         return Ok(new BaseResponse<Dictionary<string, string>>
         {

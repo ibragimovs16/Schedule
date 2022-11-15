@@ -12,4 +12,13 @@ public class GroupsController : BaseApiController<DbGroup, ModelWithName, ModelW
     public GroupsController(IBaseService<DbGroup> service) : base(service)
     {
     }
+    
+    [HttpGet, Route("Search")]
+    public async Task<IActionResult> Search(string groupName)
+    {
+        var result = await Service
+            .FindByAsync(g => g.Name == groupName);
+
+        return ActionResponse(result);
+    }
 }

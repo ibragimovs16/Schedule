@@ -5,9 +5,9 @@ using Schedule.Services.Abstractions;
 
 namespace Schedule.Backend.Controllers;
 
-public class NotificationsSettingsController : BaseApiController<DbNotificationsSettings, NotificationsSettingsCreateModel, NotificationsSettingsCreateModel>
+public class NotificationsSettingsController : BaseApiController<DbNotificationsSetting, NotificationsSettingsCreateModel, NotificationsSettingsCreateModel>
 {
-    public NotificationsSettingsController(IBaseService<DbNotificationsSettings> service) : base(service)
+    public NotificationsSettingsController(IBaseService<DbNotificationsSetting> service) : base(service)
     {
     }
 }

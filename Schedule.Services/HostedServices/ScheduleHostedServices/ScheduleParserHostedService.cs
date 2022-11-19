@@ -47,12 +47,12 @@ public class ScheduleParserHostedService : ScopedProcessor
                     if (parsedSchedule.Exception is not ParserExceptions)
                         throw new Exception("Parser error", parsedSchedule.Exception);
 
-                    var message = HandleParserExceptionAsync(parsedSchedule.Exception, group.GroupName);
+                    var res = HandleParserExceptionAsync(parsedSchedule.Exception, group.GroupName);
                     await notificationService.AddAsync(
                         new NotificationCreateModel
                         {
-                            Message = message,
-                            SubscriberId = _adminId
+                            Message = res.Message,
+                            SubscriberId = res.ToAdmin ? _adminId : group.SubscriberId ?? _adminId
                         });
                 }
                 else
@@ -89,11 +89,11 @@ public class ScheduleParserHostedService : ScopedProcessor
         }
     }
 
-    private string HandleParserExceptionAsync(Exception exception, string groupName) =>
+    private (string Message, bool ToAdmin) HandleParserExceptionAsync(Exception exception, string groupName) =>
         exception switch
         {
-            ParserExceptions.IncorrectGroupExceptions => $"Группа {groupName} не найдена",
-            ParserExceptions.CellNotFoundExceptions => $"Не удалось найти группу {groupName} в Excel таблице",
-            _ => $"Неизвестная ошибка, группа {groupName}"
+            ParserExceptions.IncorrectGroupExceptions => ($"Группа {groupName} не найдена", false),
+            ParserExceptions.CellNotFoundExceptions => ($"Не удалось найти группу {groupName} в Excel таблице", true),
+            _ => ($"Неизвестная ошибка, группа {groupName}", true)
         };
 }

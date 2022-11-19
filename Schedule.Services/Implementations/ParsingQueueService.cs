@@ -60,10 +60,18 @@ public class ParsingQueueService : IParsingQueueService
                 IsNotificationNeeded = isNotificationNeeded,
                 SubscriberId = subscriberId
             });
+            
+            if (response.IsAdded)
+                return new BaseResponse<string>
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Data = response.Message
+                };
+
             return new BaseResponse<string>
             {
-                StatusCode = response.IsAdded ? HttpStatusCode.OK : HttpStatusCode.Conflict,
-                Data = response.Message
+                StatusCode = HttpStatusCode.Conflict,
+                Message = response.Message
             };
         }
         catch (Exception e)

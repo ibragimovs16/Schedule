@@ -24,6 +24,9 @@ public class ParsingQueueRepository : IParsingQueueRepository
             if (group is not null)
                 return ("Расписание для этой группы уже существует, обновление расписания происходит каждый день в 00:00 (по МСК)", false);
             
+            if (_db.ParsingQueue.Any(pq => pq.GroupName == entity.GroupName))
+                return ("Расписание для этой группы уже находится в очереди на обновление", false);
+            
             await _db.ParsingQueue.AddAsync(entity);
             await _db.SaveChangesAsync();
             return ("Группа добавлена в очередь", true);

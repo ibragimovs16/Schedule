@@ -1,4 +1,6 @@
-﻿using Schedule.Backend.Controllers.BaseControllers;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc;
+using Schedule.Backend.Controllers.BaseControllers;
 using Schedule.Domain.DbModels;
 using Schedule.Domain.Models.CreateModels;
 using Schedule.Services.Abstractions;
@@ -9,5 +11,14 @@ public class NotificationsSettingsController : BaseApiController<DbNotifications
 {
     public NotificationsSettingsController(IBaseService<DbNotificationsSetting> service) : base(service)
     {
+    }
+    
+    [HttpGet, Route("Search")]
+    public async Task<IActionResult> Search([Required] string subscriberId)
+    {
+        var result = await Service
+            .FindByAsync(s => s.SubscriberId == subscriberId);
+
+        return ActionResponse(result);
     }
 }

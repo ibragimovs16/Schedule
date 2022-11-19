@@ -9,46 +9,46 @@ namespace Schedule.DAL.Implementations;
 
 public class BaseRepository<T> : IBaseRepository<T> where T : DbEntity
 {
-    private readonly ApplicationDbContext _db;
+    protected readonly ApplicationDbContext Db;
 
     public BaseRepository(ApplicationDbContext db)
     {
-        _db = db;
+        Db = db;
     }
 
     public virtual IQueryable<T> GetQuery() =>
-        _db.Set<T>();
+        Db.Set<T>();
 
     public IQueryable<T> GetQuery(Expression<Func<T, bool>> predicate) =>
-        _db.Set<T>().Where(predicate).AsQueryable();
+        Db.Set<T>().Where(predicate).AsQueryable();
 
     public virtual async Task<List<T>> GetAllAsync(bool descending = false)
     {
-        var data = _db.Set<T>();
+        var data = Db.Set<T>();
         return descending ? await data.OrderByDescending(x => x).ToListAsync() : await data.ToListAsync();
     }
 
     public virtual async Task<T?> GetByIdAsync(string id) =>
-        await _db.Set<T>().FirstOrDefaultAsync(x => x.Id == id);
+        await Db.Set<T>().FirstOrDefaultAsync(x => x.Id == id);
 
     public virtual async Task<List<T>> FindByAsync(Expression<Func<T, bool>> predicate) =>
-        await _db.Set<T>().Where(predicate).ToListAsync();
+        await Db.Set<T>().Where(predicate).ToListAsync();
     
     public virtual async Task<T> AddAsync(T entity)
     {
-        var createdEntity = await _db.Set<T>().AddAsync(entity);
-        await _db.SaveChangesAsync();
+        var createdEntity = await Db.Set<T>().AddAsync(entity);
+        await Db.SaveChangesAsync();
         return createdEntity.Entity;
     }
     
     public virtual async Task<T> UpdateAsync(T entity)
     {
-        var entityToUpdate = await _db.Set<T>().FirstOrDefaultAsync(x => x.Id == entity.Id);
+        var entityToUpdate = await Db.Set<T>().FirstOrDefaultAsync(x => x.Id == entity.Id);
         if (entityToUpdate is null)
             throw new Exception("Entity not found");
         
-        _db.Entry(entityToUpdate).CurrentValues.SetValues(entity);
-        await _db.SaveChangesAsync();
+        Db.Entry(entityToUpdate).CurrentValues.SetValues(entity);
+        await Db.SaveChangesAsync();
         return entity;
     }
 
@@ -56,8 +56,8 @@ public class BaseRepository<T> : IBaseRepository<T> where T : DbEntity
     {
         try
         {
-            _db.Set<T>().Remove(entity);
-            await _db.SaveChangesAsync();
+            Db.Set<T>().Remove(entity);
+            await Db.SaveChangesAsync();
             return true;
         }
         catch
@@ -82,7 +82,7 @@ public class BaseRepository<T> : IBaseRepository<T> where T : DbEntity
         {
             if (disposing)
             {
-                _db.Dispose();
+                Db.Dispose();
             }
         }
 

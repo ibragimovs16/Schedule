@@ -84,7 +84,7 @@ public static class ScheduleParser
 
             var group = new GroupData
             {
-                Date = wbWorksheet.Name,
+                Date = wbWorksheet.Name.Trim(),
                 Subjects = new List<Subject>()
             };
 
@@ -97,7 +97,7 @@ public static class ScheduleParser
                 group.Subjects.Add(new Subject
                 {
                     PairNumber = i + 1,
-                    Name = value
+                    Name = value.Trim()
                 });
             }
 

@@ -1,4 +1,6 @@
-﻿namespace Schedule.Domain.DbModels;
+﻿using Schedule.Domain.DbModels.DbEnums;
+
+namespace Schedule.Domain.DbModels;
 
 public class DbNotification : DbEntity
 {
@@ -7,4 +9,5 @@ public class DbNotification : DbEntity
     public string SubscriberId { get; set; } = string.Empty;
     public DateTime CreatedDateTime { get; set; } = DateTime.Now;
     public DateTime? SentDateTime { get; set; } = null;
+    public NotificationsTypes Type { get; set; } = NotificationsTypes.Message;
 }

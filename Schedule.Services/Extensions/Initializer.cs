@@ -13,6 +13,7 @@ public static class Initializer
 {
     public static void InitializeRepositories(this IServiceCollection services)
     {
+        services.AddScoped(typeof(IBaseRepository<DbNotification>), typeof(NotificationsRepository));
         services.AddScoped(typeof(IBaseRepository<DbNotificationsSetting>), typeof(NotificationsSettingsRepository));
         services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
         services.AddScoped<IParsingQueueRepository, ParsingQueueRepository>();
@@ -33,5 +34,6 @@ public static class Initializer
         services.AddHostedService<ScheduleParserHostedService>();
         services.AddHostedService<ScheduleUpdaterHostedService>();
         services.AddHostedService<NotificationsSenderHostedService>();
+        services.AddHostedService<NotificationsPreparerHostedService>();
     }
 }
